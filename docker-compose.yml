@@ -1,0 +1,19 @@
+services:
+  juniper-ai-assistant:
+    build: .
+    image: ai-juniper-assistant:local
+    container_name: juniper-ai-assistant
+    restart: unless-stopped
+    environment:
+      JUNIPER_AI_INVENTORY: /app/config/devices.local.json
+      JUNIPER_AI_ACCESS_CONFIG: /app/config/juniper-access.local.json
+      JUNIPER_AI_ACCOUNTS: /app/config/accounts.local.json
+      JUNIPER_AI_PROVIDERS: /app/config/ai-providers.local.json
+      JUNIPER_AI_SERVICE_INTERVAL: "60"
+      JUNIPER_AI_LOG_LEVEL: INFO
+      # OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # GEMINI_API_KEY: ${GEMINI_API_KEY}
+    volumes:
+      - ./config:/app/config:rw
+      - ./.ssh:/app/.ssh:ro

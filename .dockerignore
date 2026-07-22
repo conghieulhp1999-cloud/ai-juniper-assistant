@@ -1,0 +1,16 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+*.local.json
+*.local.env
+.env
+.ssh
+logs
+reports
+sessions
+request_dump_*.json
+dist
+build
+*.egg-info

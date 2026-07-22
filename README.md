@@ -44,6 +44,7 @@ Juniper QFX devices
 - `deploy/juniper-ai-assistant.service` - systemd unit template.
 - `deploy/juniper-ai-assistant.env.example` - service environment file template.
 - `scripts/install-service.sh` - Linux installer for the systemd service.
+- `Dockerfile` and `docker-compose.yml` - container runtime for the service.
 - `prompts/system-readonly.md` - AI system prompt for strict read-only Juniper operations.
 - `docs/operations.md` - Suggested operating model and safety checks.
 
@@ -190,6 +191,55 @@ View logs:
 ```bash
 journalctl -u juniper-ai-assistant.service -f
 ```
+
+## Run With Docker
+
+Create local config files first:
+
+```bash
+cp config/devices.example.json config/devices.local.json
+cp config/juniper-access.example.json config/juniper-access.local.json
+cp config/ai-providers.example.json config/ai-providers.local.json
+cp config/accounts.example.json config/accounts.local.json
+mkdir -p .ssh
+```
+
+Put the Juniper SSH private keys referenced by `config/juniper-access.local.json` under `.ssh/`, or update the key paths in the config to match the mounted container path. The default compose file mounts:
+
+```text
+./config -> /app/config
+./.ssh   -> /app/.ssh
+```
+
+Build and validate:
+
+```bash
+docker compose build
+docker compose run --rm juniper-ai-assistant \
+  python -m juniper_ai_assistant.service --check
+```
+
+Start the service:
+
+```bash
+docker compose up -d
+docker compose logs -f juniper-ai-assistant
+```
+
+Run the CLI inside the container:
+
+```bash
+docker compose run --rm juniper-ai-assistant \
+  juniper-ai-assistant run-command \
+  --inventory /app/config/devices.local.json \
+  --access-config /app/config/juniper-access.local.json \
+  --accounts /app/config/accounts.local.json \
+  --username noc-viewer \
+  --device lab-qfx-01 \
+  --command "show version | no-more"
+```
+
+Pass AI keys through the shell environment or a Docker secret mechanism. Do not write real keys into `docker-compose.yml`.
 
 ## Safety Model
 

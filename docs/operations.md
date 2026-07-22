@@ -28,6 +28,19 @@ The check validates:
 
 Missing AI key environment variables are reported as a warning in the JSON summary so operators can decide whether to use a different provider or update the service environment.
 
+## Container Lifecycle
+
+The Docker runtime uses the same config model as the systemd service. Mount local config into `/app/config` and SSH keys into `/app/.ssh`.
+
+Recommended preflight:
+
+```bash
+docker compose build
+docker compose run --rm juniper-ai-assistant python -m juniper_ai_assistant.service --check
+```
+
+The service container runs as a non-root `juniper-ai` user. Make sure mounted SSH private keys are readable by that user inside the container. If permissions are too restrictive, use a dedicated deployment key file with read-only host permissions and mount it as read-only.
+
 ## Example Checks
 
 ```text
