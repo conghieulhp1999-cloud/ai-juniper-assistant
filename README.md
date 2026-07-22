@@ -36,10 +36,14 @@ Juniper QFX devices
 - `src/juniper_ai_assistant/ai_config.py` - AI provider configuration for Codex, Claude, Gemini, and compatible providers.
 - `src/juniper_ai_assistant/accounts.py` - Local account registration, login, role, and device authorization.
 - `src/juniper_ai_assistant/cli.py` - CLI entrypoint for collecting command output.
+- `src/juniper_ai_assistant/service.py` - Long-running service entrypoint with config validation and heartbeat logging.
 - `config/devices.example.json` - Example device inventory with placeholder values.
 - `config/juniper-access.example.json` - Example Juniper access credentials file created during service setup.
 - `config/ai-providers.example.json` - Example AI provider config using environment variable names instead of secrets.
 - `config/accounts.example.json` - Example account and role model.
+- `deploy/juniper-ai-assistant.service` - systemd unit template.
+- `deploy/juniper-ai-assistant.env.example` - service environment file template.
+- `scripts/install-service.sh` - Linux installer for the systemd service.
 - `prompts/system-readonly.md` - AI system prompt for strict read-only Juniper operations.
 - `docs/operations.md` - Suggested operating model and safety checks.
 
@@ -134,6 +138,57 @@ python3 -m juniper_ai_assistant.cli run-command \
   --device lab-qfx-01 \
   --allow-state-changing \
   --command "configure private"
+```
+
+## Install As A Service
+
+From the repository root:
+
+```bash
+sudo ./scripts/install-service.sh
+```
+
+The installer creates:
+
+| Path | Purpose |
+|---|---|
+| `/opt/juniper-ai-assistant` | Application directory, virtual environment, local JSON config |
+| `/etc/juniper-ai-assistant/juniper-ai-assistant.env` | Runtime environment and AI API key variables |
+| `/etc/systemd/system/juniper-ai-assistant.service` | systemd service |
+| `juniper-ai` | Dedicated Linux service user |
+
+Edit the local config files:
+
+```bash
+sudoedit /opt/juniper-ai-assistant/config/devices.local.json
+sudoedit /opt/juniper-ai-assistant/config/juniper-access.local.json
+sudoedit /opt/juniper-ai-assistant/config/ai-providers.local.json
+sudoedit /opt/juniper-ai-assistant/config/accounts.local.json
+sudoedit /etc/juniper-ai-assistant/juniper-ai-assistant.env
+```
+
+Validate service configuration before starting:
+
+```bash
+sudo -u juniper-ai \
+  JUNIPER_AI_INVENTORY=/opt/juniper-ai-assistant/config/devices.local.json \
+  JUNIPER_AI_ACCESS_CONFIG=/opt/juniper-ai-assistant/config/juniper-access.local.json \
+  JUNIPER_AI_ACCOUNTS=/opt/juniper-ai-assistant/config/accounts.local.json \
+  JUNIPER_AI_PROVIDERS=/opt/juniper-ai-assistant/config/ai-providers.local.json \
+  /opt/juniper-ai-assistant/.venv/bin/python -m juniper_ai_assistant.service --check
+```
+
+Enable and start:
+
+```bash
+sudo systemctl enable --now juniper-ai-assistant.service
+sudo systemctl status juniper-ai-assistant.service
+```
+
+View logs:
+
+```bash
+journalctl -u juniper-ai-assistant.service -f
 ```
 
 ## Safety Model

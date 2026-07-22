@@ -12,6 +12,7 @@ from juniper_ai_assistant.collector import (
     validate_command,
     validate_readonly_command,
 )
+from juniper_ai_assistant.service import ServiceConfig, validate_service_config
 
 
 class ReadOnlyPolicyTest(unittest.TestCase):
@@ -141,6 +142,63 @@ class AIProviderConfigTest(unittest.TestCase):
                     default_model="model",
                     default_api_key_env="UNKNOWN_API_KEY",
                 )
+
+
+class ServiceConfigTest(unittest.TestCase):
+    def test_service_config_check_summarizes_local_files(self):
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            accounts_path = root / "accounts.local.json"
+            access_path = root / "juniper-access.local.json"
+            ai_path = root / "ai-providers.local.json"
+            inventory_path = root / "devices.local.json"
+
+            AccountStore(accounts_path).register(
+                "noc-viewer",
+                "secret",
+                "readonly",
+                ["lab-qfx-01"],
+            )
+            write_access_config(
+                path=access_path,
+                readonly_username="readonly-user",
+                readonly_identity_file="~/.ssh/readonly",
+                superuser_username="admin-user",
+                superuser_identity_file="~/.ssh/admin",
+            )
+            write_ai_provider_config(
+                path=ai_path,
+                default_provider="codex",
+                default_model="your-codex-model",
+                default_api_key_env="OPENAI_API_KEY",
+            )
+            inventory_path.write_text(
+                json.dumps(
+                    {
+                        "devices": {
+                            "lab-qfx-01": {
+                                "host": "192.0.2.31",
+                                "access_profile": "default",
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            summary = validate_service_config(
+                ServiceConfig(
+                    inventory=inventory_path,
+                    access_config=access_path,
+                    accounts=accounts_path,
+                    ai_config=ai_path,
+                )
+            )
+            self.assertEqual(summary["devices"], 1)
+            self.assertEqual(summary["access_profiles"], 1)
+            self.assertEqual(summary["accounts"], 1)
+            self.assertEqual(summary["ai_providers"], 1)
+            self.assertEqual(summary["missing_ai_key_env"], ["OPENAI_API_KEY"])
 
 
 if __name__ == "__main__":

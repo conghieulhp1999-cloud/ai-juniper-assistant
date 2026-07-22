@@ -8,6 +8,26 @@
 4. Collect output over SSH using a dedicated low-privilege account.
 5. Summarize evidence and identify gaps.
 
+## Service Lifecycle
+
+Install the systemd service with `scripts/install-service.sh`, then edit the generated local config files under `/opt/juniper-ai-assistant/config` and `/etc/juniper-ai-assistant`.
+
+Before enabling the service, run:
+
+```bash
+juniper-ai-assistant-service --check
+```
+
+The check validates:
+
+- Device inventory JSON
+- Juniper access profiles
+- Hermes account file
+- AI provider file
+- Whether configured AI provider API key environment variables are present
+
+Missing AI key environment variables are reported as a warning in the JSON summary so operators can decide whether to use a different provider or update the service environment.
+
 ## Example Checks
 
 ```text
