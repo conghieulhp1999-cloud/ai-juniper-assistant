@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 
 from juniper_ai_assistant.accounts import AccountStore, authorize_device
 from juniper_ai_assistant.access_config import load_access_profiles, write_access_config
+from juniper_ai_assistant.ai_config import load_ai_providers, write_ai_provider_config
 from juniper_ai_assistant.collector import (
     load_inventory_and_access,
     resolve_credential,
@@ -113,6 +114,33 @@ class AccessConfigTest(unittest.TestCase):
                 "superuser",
             )
             self.assertEqual(credential.username, "admin-user")
+
+
+class AIProviderConfigTest(unittest.TestCase):
+    def test_setup_writes_ai_provider_without_secret_value(self):
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "ai-providers.local.json"
+            write_ai_provider_config(
+                path=path,
+                default_provider="codex",
+                default_model="your-codex-model",
+                default_api_key_env="OPENAI_API_KEY",
+            )
+
+            providers = load_ai_providers(path)
+            self.assertEqual(providers["default"].provider, "codex")
+            self.assertEqual(providers["default"].api_key_env, "OPENAI_API_KEY")
+
+    def test_rejects_unknown_ai_provider(self):
+        with TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "ai-providers.local.json"
+            with self.assertRaises(ValueError):
+                write_ai_provider_config(
+                    path=path,
+                    default_provider="unknown",
+                    default_model="model",
+                    default_api_key_env="UNKNOWN_API_KEY",
+                )
 
 
 if __name__ == "__main__":

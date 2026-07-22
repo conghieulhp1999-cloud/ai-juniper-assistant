@@ -1,0 +1,20 @@
+{
+  "default_provider": "codex",
+  "providers": {
+    "codex": {
+      "provider": "codex",
+      "model": "your-codex-model",
+      "api_key_env": "OPENAI_API_KEY"
+    },
+    "claude": {
+      "provider": "claude",
+      "model": "your-claude-model",
+      "api_key_env": "ANTHROPIC_API_KEY"
+    },
+    "gemini": {
+      "provider": "gemini",
+      "model": "your-gemini-model",
+      "api_key_env": "GEMINI_API_KEY"
+    }
+  }
+}

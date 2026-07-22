@@ -7,6 +7,7 @@ import sys
 
 from .accounts import AccountStore, authorize_device
 from .access_config import write_access_config
+from .ai_config import SUPPORTED_PROVIDERS, write_ai_provider_config
 from .collector import collect, load_inventory_and_access
 
 
@@ -29,6 +30,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--profile",
         default="default",
         help="Access profile name used by devices. Default: default.",
+    )
+
+    setup_ai = subparsers.add_parser(
+        "setup-ai",
+        help="Create the AI provider config used by the Hermes service.",
+    )
+    setup_ai.add_argument(
+        "--ai-config",
+        required=True,
+        help="Path to write the AI provider config JSON.",
+    )
+    setup_ai.add_argument(
+        "--profile",
+        default="default",
+        help="AI provider profile name. Default: default.",
     )
 
     register = subparsers.add_parser("register-user", help="Register a Hermes user.")
@@ -99,6 +115,32 @@ def main(argv: list[str] | None = None) -> int:
             print(str(exc), file=sys.stderr)
             return 1
         print(f"Wrote Juniper access config to {args.access_config}.")
+        return 0
+
+    if args.action == "setup-ai":
+        print("AI provider configuration")
+        provider = input(
+            "Provider (codex, claude, gemini, openai, openrouter): "
+        ).strip()
+        if provider not in SUPPORTED_PROVIDERS:
+            print(f"Unsupported AI provider: {provider}", file=sys.stderr)
+            return 1
+        model = input("Model name: ").strip()
+        api_key_env = input("API key environment variable name: ").strip()
+        base_url = input("Base URL (optional): ").strip() or None
+        try:
+            write_ai_provider_config(
+                path=args.ai_config,
+                default_provider=provider,
+                default_model=model,
+                default_api_key_env=api_key_env,
+                provider_name=args.profile,
+                base_url=base_url,
+            )
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(f"Wrote AI provider config to {args.ai_config}.")
         return 0
 
     if args.action == "register-user":

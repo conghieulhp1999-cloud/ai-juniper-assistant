@@ -53,6 +53,19 @@ Store these Juniper device accounts in `config/juniper-access.local.json`. If th
 
 Superuser accounts should still require an explicit approval or flag before running state-changing commands from a chat workflow.
 
+## AI Provider Setup
+
+Configure AI providers during service installation with `setup-ai`. If that step is skipped, copy `config/ai-providers.example.json` to `config/ai-providers.local.json` and edit it later.
+
+The provider file should contain only metadata:
+
+- Provider name, such as `codex`, `claude`, `gemini`, `openai`, or `openrouter`
+- Model name
+- Environment variable name containing the API key
+- Optional base URL
+
+The actual API key must stay in the service environment, secret manager, or deployment platform. Do not store the key in Git or in chat history.
+
 ## Data Handling
 
 Keep the following out of public repositories:
@@ -64,6 +77,7 @@ Keep the following out of public repositories:
 - Session dumps
 - Chat transcripts
 - Provider tokens
+- AI API keys
 
 ## Failure Handling
 
