@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .access_config import AccessCredential, AccessProfile, load_access_profiles
+
 
 BLOCKED_TOKENS = {
     "clear",
@@ -26,25 +28,11 @@ BLOCKED_TOKENS = {
 
 
 @dataclass(frozen=True)
-class DeviceCredential:
-    role: str
-    username: str
-    identity_file: Path
-
-
-@dataclass(frozen=True)
 class Device:
     name: str
     host: str
-    credentials: dict[str, DeviceCredential]
+    access_profile: str
     port: int = 22
-
-    def credential_for_role(self, role: str) -> DeviceCredential:
-        if role in self.credentials:
-            return self.credentials[role]
-        if role == "superuser" and "readonly" in self.credentials:
-            raise PermissionError(f"Device {self.name} has no superuser credential.")
-        raise PermissionError(f"Device {self.name} has no credential for role {role}.")
 
 
 def load_inventory(path: str | Path) -> dict[str, Device]:
@@ -54,30 +42,26 @@ def load_inventory(path: str | Path) -> dict[str, Device]:
 
     devices: dict[str, Device] = {}
     for name, config in raw.get("devices", {}).items():
-        if "credentials" in config:
-            credentials = {
-                role: DeviceCredential(
-                    role=role,
-                    username=credential["username"],
-                    identity_file=Path(credential["identity_file"]).expanduser(),
-                )
-                for role, credential in config["credentials"].items()
-            }
-        else:
-            credentials = {
-                "readonly": DeviceCredential(
-                    role="readonly",
-                    username=config["username"],
-                    identity_file=Path(config["identity_file"]).expanduser(),
-                )
-            }
         devices[name] = Device(
             name=name,
             host=config["host"],
-            credentials=credentials,
+            access_profile=config.get("access_profile", "default"),
             port=int(config.get("port", 22)),
         )
     return devices
+
+
+def resolve_credential(
+    device: Device,
+    access_profiles: dict[str, AccessProfile],
+    role: str,
+) -> AccessCredential:
+    if device.access_profile not in access_profiles:
+        raise PermissionError(
+            f"Device {device.name} references unknown access profile "
+            f"{device.access_profile}."
+        )
+    return access_profiles[device.access_profile].credential_for_role(role)
 
 
 def validate_command(
@@ -108,12 +92,13 @@ def validate_readonly_command(command: str) -> None:
 def run_command(
     device: Device,
     command: str,
+    access_profiles: dict[str, AccessProfile],
     role: str = "readonly",
     allow_state_changing: bool = False,
     timeout: int = 30,
 ) -> str:
     validate_command(command, role=role, allow_state_changing=allow_state_changing)
-    credential = device.credential_for_role(role)
+    credential = resolve_credential(device, access_profiles, role)
 
     ssh_command = [
         "ssh",
@@ -149,13 +134,25 @@ def run_command(
     return result.stdout
 
 
-def run_show_command(device: Device, command: str, timeout: int = 30) -> str:
-    return run_command(device, command, role="readonly", timeout=timeout)
+def run_show_command(
+    device: Device,
+    command: str,
+    access_profiles: dict[str, AccessProfile],
+    timeout: int = 30,
+) -> str:
+    return run_command(
+        device,
+        command,
+        access_profiles=access_profiles,
+        role="readonly",
+        timeout=timeout,
+    )
 
 
 def collect(
     device: Device,
     commands: list[str],
+    access_profiles: dict[str, AccessProfile],
     role: str = "readonly",
     allow_state_changing: bool = False,
 ) -> dict[str, Any]:
@@ -172,9 +169,17 @@ def collect(
                 "output": run_command(
                     device,
                     command,
+                    access_profiles=access_profiles,
                     role=role,
                     allow_state_changing=allow_state_changing,
                 ),
             }
         )
     return output
+
+
+def load_inventory_and_access(
+    inventory_path: str | Path,
+    access_config_path: str | Path,
+) -> tuple[dict[str, Device], dict[str, AccessProfile]]:
+    return load_inventory(inventory_path), load_access_profiles(access_config_path)

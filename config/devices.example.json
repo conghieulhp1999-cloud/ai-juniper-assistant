@@ -2,30 +2,12 @@
   "devices": {
     "lab-qfx-01": {
       "host": "192.0.2.31",
-      "credentials": {
-        "readonly": {
-          "username": "readonly-user",
-          "identity_file": "~/.ssh/id_ed25519_juniper_readonly"
-        },
-        "superuser": {
-          "username": "admin-user",
-          "identity_file": "~/.ssh/id_ed25519_juniper_admin"
-        }
-      },
+      "access_profile": "default",
       "port": 22
     },
     "lab-qfx-02": {
       "host": "192.0.2.35",
-      "credentials": {
-        "readonly": {
-          "username": "readonly-user",
-          "identity_file": "~/.ssh/id_ed25519_juniper_readonly"
-        },
-        "superuser": {
-          "username": "admin-user",
-          "identity_file": "~/.ssh/id_ed25519_juniper_admin"
-        }
-      },
+      "access_profile": "default",
       "port": 22
     }
   }

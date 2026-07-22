@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "default": {
+      "credentials": {
+        "readonly": {
+          "username": "readonly-user",
+          "identity_file": "~/.ssh/id_ed25519_juniper_readonly"
+        },
+        "superuser": {
+          "username": "admin-user",
+          "identity_file": "~/.ssh/id_ed25519_juniper_admin"
+        }
+      }
+    }
+  }
+}

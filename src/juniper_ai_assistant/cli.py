@@ -6,7 +6,8 @@ import json
 import sys
 
 from .accounts import AccountStore, authorize_device
-from .collector import collect, load_inventory
+from .access_config import write_access_config
+from .collector import collect, load_inventory_and_access
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -14,6 +15,21 @@ def build_parser() -> argparse.ArgumentParser:
         description="Authorize users and run Junos commands through role-based SSH credentials."
     )
     subparsers = parser.add_subparsers(dest="action", required=True)
+
+    setup = subparsers.add_parser(
+        "setup-service",
+        help="Create the Juniper access config used by the Hermes service.",
+    )
+    setup.add_argument(
+        "--access-config",
+        required=True,
+        help="Path to write the Juniper access config JSON.",
+    )
+    setup.add_argument(
+        "--profile",
+        default="default",
+        help="Access profile name used by devices. Default: default.",
+    )
 
     register = subparsers.add_parser("register-user", help="Register a Hermes user.")
     register.add_argument("--accounts", required=True, help="Path to local accounts JSON.")
@@ -33,6 +49,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     run = subparsers.add_parser("run-command", help="Run a command as a logged-in user.")
     run.add_argument("--inventory", required=True, help="Path to inventory JSON.")
+    run.add_argument(
+        "--access-config",
+        required=True,
+        help="Path to Juniper access config JSON.",
+    )
     run.add_argument("--accounts", required=True, help="Path to local accounts JSON.")
     run.add_argument("--username", required=True, help="Hermes login username.")
     run.add_argument("--device", required=True, help="Device name from inventory.")
@@ -58,6 +79,28 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
+    if args.action == "setup-service":
+        print("Juniper read-only account")
+        readonly_username = input("Username: ").strip()
+        readonly_identity_file = input("SSH private key path: ").strip()
+        print("Juniper superuser account")
+        superuser_username = input("Username: ").strip()
+        superuser_identity_file = input("SSH private key path: ").strip()
+        try:
+            write_access_config(
+                path=args.access_config,
+                readonly_username=readonly_username,
+                readonly_identity_file=readonly_identity_file,
+                superuser_username=superuser_username,
+                superuser_identity_file=superuser_identity_file,
+                profile_name=args.profile,
+            )
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(f"Wrote Juniper access config to {args.access_config}.")
+        return 0
+
     if args.action == "register-user":
         password = getpass.getpass("Password: ")
         confirm = getpass.getpass("Confirm password: ")
@@ -77,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Registered {args.username} as {args.role}.")
         return 0
 
-    devices = load_inventory(args.inventory)
+    devices, access_profiles = load_inventory_and_access(args.inventory, args.access_config)
     if args.device not in devices:
         print(f"Unknown device: {args.device}", file=sys.stderr)
         return 2
@@ -89,6 +132,7 @@ def main(argv: list[str] | None = None) -> int:
         result = collect(
             devices[args.device],
             args.command,
+            access_profiles=access_profiles,
             role=account.role,
             allow_state_changing=args.allow_state_changing,
         )

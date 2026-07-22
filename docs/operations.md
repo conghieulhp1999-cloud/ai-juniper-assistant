@@ -38,7 +38,7 @@ user admin-user {
 }
 ```
 
-Map Hermes users to these device accounts through `config/devices.local.json` and `config/accounts.local.json`.
+Store these Juniper device accounts in `config/juniper-access.local.json`. If the operator skips the interactive service setup, copy `config/juniper-access.example.json` and edit the local file later.
 
 ## Hermes Account Flow
 
@@ -47,8 +47,9 @@ Map Hermes users to these device accounts through `config/devices.local.json` an
 3. Assign the user to one or more device names.
 4. At login, authenticate the Hermes user.
 5. Authorize the requested device.
-6. Select the matching Juniper SSH credential for that role.
-7. Validate the command against the role policy before executing it.
+6. Load the device access profile from `config/juniper-access.local.json`.
+7. Select the matching Juniper SSH credential for that role.
+8. Validate the command against the role policy before executing it.
 
 Superuser accounts should still require an explicit approval or flag before running state-changing commands from a chat workflow.
 
