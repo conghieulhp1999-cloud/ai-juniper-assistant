@@ -1,0 +1,16 @@
+{
+  "devices": {
+    "lab-qfx-01": {
+      "host": "192.0.2.31",
+      "username": "readonly-user",
+      "identity_file": "~/.ssh/id_ed25519_juniper_readonly",
+      "port": 22
+    },
+    "lab-qfx-02": {
+      "host": "192.0.2.35",
+      "username": "readonly-user",
+      "identity_file": "~/.ssh/id_ed25519_juniper_readonly",
+      "port": 22
+    }
+  }
+}
