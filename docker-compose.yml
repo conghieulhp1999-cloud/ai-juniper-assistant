@@ -1,7 +1,6 @@
 services:
   juniper-ai-assistant:
-    build: .
-    image: ai-juniper-assistant:local
+    image: docker.io/ddemonn/ai-juniper-assistant:latest
     container_name: juniper-ai-assistant
     restart: unless-stopped
     environment:

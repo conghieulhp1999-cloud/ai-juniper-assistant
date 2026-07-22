@@ -1,0 +1,4 @@
+services:
+  juniper-ai-assistant:
+    build: .
+    image: ai-juniper-assistant:local

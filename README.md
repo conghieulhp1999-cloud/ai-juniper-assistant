@@ -44,7 +44,7 @@ Juniper QFX devices
 - `deploy/juniper-ai-assistant.service` - systemd unit template.
 - `deploy/juniper-ai-assistant.env.example` - service environment file template.
 - `scripts/install-service.sh` - Linux installer for the systemd service.
-- `Dockerfile` and `docker-compose.yml` - container runtime for the service.
+- `Dockerfile`, `docker-compose.yml`, and `docker-compose.build.yml` - Docker runtime for the service.
 - `prompts/system-readonly.md` - AI system prompt for strict read-only Juniper operations.
 - `docs/operations.md` - Suggested operating model and safety checks.
 
@@ -194,6 +194,12 @@ journalctl -u juniper-ai-assistant.service -f
 
 ## Run With Docker
 
+The published image is:
+
+```text
+docker.io/ddemonn/ai-juniper-assistant:latest
+```
+
 Create local config files first:
 
 ```bash
@@ -211,10 +217,10 @@ Put the Juniper SSH private keys referenced by `config/juniper-access.local.json
 ./.ssh   -> /app/.ssh
 ```
 
-Build and validate:
+Pull and validate:
 
 ```bash
-docker compose build
+docker compose pull
 docker compose run --rm juniper-ai-assistant \
   python -m juniper_ai_assistant.service --check
 ```
@@ -240,6 +246,13 @@ docker compose run --rm juniper-ai-assistant \
 ```
 
 Pass AI keys through the shell environment or a Docker secret mechanism. Do not write real keys into `docker-compose.yml`.
+
+To build locally instead of pulling Docker Hub:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml build
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d
+```
 
 ## Safety Model
 

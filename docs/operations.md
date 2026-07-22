@@ -35,9 +35,11 @@ The Docker runtime uses the same config model as the systemd service. Mount loca
 Recommended preflight:
 
 ```bash
-docker compose build
+docker compose pull
 docker compose run --rm juniper-ai-assistant python -m juniper_ai_assistant.service --check
 ```
+
+Use `docker-compose.build.yml` when operators need to build the image from local source instead of pulling Docker Hub.
 
 The service container runs as a non-root `juniper-ai` user. Make sure mounted SSH private keys are readable by that user inside the container. If permissions are too restrictive, use a dedicated deployment key file with read-only host permissions and mount it as read-only.
 
