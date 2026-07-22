@@ -1,0 +1,19 @@
+{
+  "accounts": {
+    "noc-viewer": {
+      "password_hash": "generated-by-register-user",
+      "role": "readonly",
+      "devices": [
+        "lab-qfx-01",
+        "lab-qfx-02"
+      ]
+    },
+    "network-admin": {
+      "password_hash": "generated-by-register-user",
+      "role": "superuser",
+      "devices": [
+        "*"
+      ]
+    }
+  }
+}

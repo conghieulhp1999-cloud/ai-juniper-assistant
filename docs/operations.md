@@ -22,15 +22,35 @@ show ethernet-switching table | no-more
 
 ## Device Account
 
-Use a dedicated Junos login class with view-only permissions. Example intent:
+Use separate Junos users for AI roles. Example intent:
 
 ```text
 class ai-readonly {
     permissions [ view view-configuration ];
 }
+
+user readonly-user {
+    class ai-readonly;
+}
+
+user admin-user {
+    class super-user;
+}
 ```
 
-Do not use privileged automation accounts for AI-assisted troubleshooting.
+Map Hermes users to these device accounts through `config/devices.local.json` and `config/accounts.local.json`.
+
+## Hermes Account Flow
+
+1. Register a Hermes user with `register-user`.
+2. Assign the user a role: `readonly` or `superuser`.
+3. Assign the user to one or more device names.
+4. At login, authenticate the Hermes user.
+5. Authorize the requested device.
+6. Select the matching Juniper SSH credential for that role.
+7. Validate the command against the role policy before executing it.
+
+Superuser accounts should still require an explicit approval or flag before running state-changing commands from a chat workflow.
 
 ## Data Handling
 
